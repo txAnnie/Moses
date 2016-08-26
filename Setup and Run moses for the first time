@@ -21,6 +21,7 @@ cd boost_1_55_0/
 ./bootstrap.sh
 ./b2 -j4 --prefix=$PWD --libdir=$PWD/lib64 --layout=system link=static install || echo FAILURE
 2.Once boost is installed, you can then compile Moses. However, you must tell Moses where boost is with the --with-boost flag. This is the exact commands I use to compile Moses: 
+cd ..
 ./bjam --with-boost=/home/annie/mosesdecoder/boost_1_55_0 -j4
 
 
