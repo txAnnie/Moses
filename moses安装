@@ -1,0 +1,310 @@
+简介
+export PATH=/usr/bin:/usr/sbin:/bin:/sbin:/usr/X11R6/bin
+
+
+Moses是由英国爱丁堡大学、德国亚琛工业大学等8家单位联合开发的一个基于短语的统计机器翻译系统。整个系统用C++语言写成，从训练 training到解码 decoder完全开放源代码，可以运行在Linux平台和Windows平台。是目前最流行的基于短语的机器翻译系统。
+
+语料
+
+b.cn ：中文语料（不要太少，最少也要上千句！笔者用了3000多句做实验）
+
+b.en ：拼音语料（与中文语料一一对应）
+
+注：
+
+语料最好是分词之后的，因为笔者用未分词的语料进行出错，目前还没找到为什么出错！
+语料一定要是utf-8编码的！
+语料最好是正常的句子
+前期准备
+
+安装工具 (带*不是必须安装，他们是可视化)
+
+格式：sudo apt-get install [package name]
+
+查看是否安装某工具包：dpkg -l | grep [package name]
+
+g++
+git
+subversion
+automake
+libtool
+zlib1g-dev (注：g前是数字1)
+libboost-all-dev
+libbz2-dev
+liblzma-dev
+python-dev
+make
+graphviz
+imagemagick
+libgoogle-perftools-dev (for tcmalloc)
+环境配置
+
+Ubuntu
+boost (http://downloads.sourceforge.net/project/boost/boost/1.55.0/boost_1_55_0.tar.gz)
+irstlm5.80.08 (http://sourceforge.net/projects/irstlm/?source=navbar )
+moses (https://github.com/moses-smt/mosesdecoder)
+giza++ (https://github.com/jinyeqiong/BasedNLP/blob/master/GIZA%2B%2B实验.md)
+cmph
+安装Boost
+
+wget http://downloads.sourceforge.net/project/boost/boost/1.55.0/boost_1_55_0.tar.gz 
+tar zxvf boost_1_55_0.tar.gz
+cd boost_1_55_0/
+./bootstrap.sh
+./b2 -j4 --prefix=$PWD --libdir=$PWD/lib64 --layout=system link=static install || echo FAILURE
+安装GIZA++
+
+详情可参考https://github.com/jinyeqiong/BasedNLP/blob/master/GIZA%2B%2B实验.md
+
+wget http://giza-pp.googlecode.com/files/giza-pp-v1.0.7.tar.gz
+tar xzvf giza-pp-v1.0.7.tar.gz
+cd giza-pp
+Make
+编译后将得到的 giza-pp/GIZA++-v2/GIZA++, giza-pp/GIZA++-v2/snt2cooc.out 和 giza-pp/mkcls-v2/mkcls 三个文件放在一个文件夹中（tools），方便后期使用，笔者将该文件夹tools放在mosesdecoder（后面会讲到）下。
+/*
+安装IRSTLM
+
+下载地址：http://sourceforge.net/projects/irstlm/?source=navbar（附件即有，笔者用的是最新版本5.80.08）
+
+详情可以看看这个网址，笔者觉得写得不错~http://blog.csdn.net/lqj1990/article/details/47105691
+
+tar zxvf irstlm-5.80.08.zip
+cd irstlm-5.80.08/trunk
+sh regenerate-makefiles.sh
+./configure --prefix=$HOME/workspace/Moses/irstlm-5.80.08 #文件所在的绝对路径
+make
+make install
+*/
+安装SRILM
+
+下载地址：http://www.speech.sri.com/projects/srilm/download.html
+tar -vxzf srilm-1.7.1.tar.gz
+首先.安装依赖的软件包：
+　1.c/c++ compiler：编译器gcc 3.4.3及以上版本
+　2.GNU make：构建和管理工程的工具，解释Makefile里的指令，描述了整个工程所有文件的编译顺序和编译规则。这里是为了控制SRILM的编译和安装。
+　3.GNU gawk：GNU所做的awk程序语言。对于文字资料的修改，对比，抽取等处理，使用c或passcal等不方便且费时，awk能够以很短的程序完成。这里是处理SRILM里的一些脚本文件。
+　4.GNU gzip：使用c语言编写的一种解压缩软件。这里是为了使SRILM能够处理.Z和.GZ后缀的压缩文件。
+　5.bzip2：数据压缩软件，压缩效率更高。这里是使SRILM能处理.bz2后缀的压缩文件。
+　6.P7zip：数据压缩软件。这里是使SRILM能处理7-zip的压缩文件。
+　7.Tcl可嵌入式脚本语言。用于脚本编程和测试。这里是为了SRILM的测试。最好安装tcl8.x和tcl8.x-dev。
+　8.csh：Unix shell的一种。（这个很重要，安装过程中有个问题困扰了很久，最后发现是csh没有安装的原因）。
+Tcl安装：
+下载后
+tar -zxvf tcl8.5.19.tar.gz
+cd unix
+./configure
+make 
+make install
+修改Makefile文件（srilm目录下）
+找到此行： 
+# SRILM = /home/speech/stolcke/project/srilm/devel，另起一行输入srilm的安装路径
+找到此行：
+MACHINE_TYPE := (shell(SRILM)/sbin/machine-type)，在其前加＃注释掉，并另起一行输入：MACHINE_TYPE := i686-m64。此行告诉Makefile之后要看的设置在/home/user/srilm/common/Makefile.machine.i686-m64中。
+把ubuntu9.0.4系统的相关设定告诉Makefile，即用编辑器修改/home/user/srilm/common目录下的文件：Makefile.machine.i686-m64
+找到：
+GCC_FLAGS = -march=athlon64 -m64 -Wreturn-type -Wimplicit
+CC = (GCCPATH)gcc(GCC_FLAGS) -Wimplicit-int
+CXX = (GCCPATH)g++(GCC_FLAGS) -DINSTANTIATE_TEMPLATES
+这里是为了告诉SRILM系统使用的compiler(c和c++)，符合安装情况，不需要修改。
+将51行 
+# Tcl support (standard in Linux) 下的两行修改如下：
+　　TCL_INCLUDE = -I/usr/include/tcl8.5
+　　TCL_LIBRARY = -L/usr/lib/tcl8.5
+注：我装的是tcl8.5，如果是其他版本，请相应修改。
+回到srilm目录下编译：
+　　cd ..
+　　make World
+顺利的话，srilm就编译通过了。如果出现问题，很可能就是相应的依赖工具没有装完全，请回到第4步检查。
+进入srilm/test目录下进行测试：
+编译通过不等于编译成功，必须利用srilm提供的测试模块进行测试
+首先声明srilm编译成功后工具报所在的环境变量：
+　　export 　PATH=/home/srilm/bin/i686-m64:
+/home/srilm/bin:$PATH
+然后进入test测试：
+　　cd test
+　　make all
+出现如下信息：
+*** Running test class-ngram-simple ***
+0.50user 0.11system 0:00.61elapsed 100%CPU 　(0avgtext+0avgdata 0maxresident)k
+0inputs+1288outputs (0major+4684minor)pagefaults 0swaps
+class-ngram-simple: stdout output IDENTICAL.
+class-ngram-simple: stderr output IDENTICAL.
+….
+需要等待一段时间，如果出现多是IDENTICAL,很少的DIFFERS，就证明srilm编译成功了！
+
+安装cmph
+
+压缩包附件即有
+
+cd cmph-2.0
+./configure --prefix=$HOME/workspace/Moses/cmph-2.0 #文件所在的绝对路径
+make
+make install
+编译成功后，会出现一些二进制文件和脚本文件，后面要用到build_lm.sh、add-start-end.sh、compile-lm等脚本。
+
+安装编译Moses
+
+下载地址：https://github.com/moses-smt/mosesdecoder
+
+cd mosesdecoder
+./bjam --with-irstlm=/home/xuexin/workspace/Moses/itstlm-5.80.08 \
+--with-mgiza=/home/xuexin/workspace/Moses/giza-pp \ 
+--with-cmph=/home/xuexin/workspace/Moses/cmph-2.0
+注：“\” 表示换行，没写完
+
+–with-irstlm 用于指定irstlm的位置
+
+–with-mgiza 用于指定mgiza++的位置
+
+–with-cmph 用于指定cmph的位置
+
+-j 4 用于指定核心数
+
+等待几分钟以后，屏幕提示“success“即为编译完成 。可查看./bin目录下会有可执行文件moses。
+
+别忘了之前将tools文件夹放在mosesdecoder文件夹下
+
+更改环境变量
+
+#在根目录下
+vi .bashrc
+进入编辑模式，输入：
+
+IRSTLM="\$HOME/workspace/Moses/itstlm-5.80.08"
+export IRSTLM 
+MOSE="\$HOME/workspace/Moses/mosesdecoder" 
+export MOSE 
+MOSE_SCRIPTS="\$MOSE/scripts" 
+export MOSE_SCRIPTS
+/*KENLM=
+"\$HOME/workspace/Moses/kenlm"
+export KENLM*/
+PATH="\$MOSE/bin:\$MOSE_SCRIPTS/training:\$MOSE_SCRIPTS/tokenizer:\$MOSE_SCRIPTS/recaser:\$IRSTLM/bin:\$KENLM/bin:\$PATH" 
+export PATH 
+esc键退出插入状态，：wq退出并保存.bashrc文件。重启terminal，环境变量生效。可以利用echo $PATH查看环境变量是否成功，在PATH内的路径下的脚本文件都可以直接使用。
+
+至此，moses编译安装完成。
+
+测试运行moses
+
+cd ~/workspace/Moses/mosesdecoder
+wget http://www.statmt.org/moses/download/sample-models.tgz
+tar xzf sample-models.tgz
+cd sample-models
+#运行moses进行解码
+../bin/moses -f phrase-model/moses.ini < phrase-model/in > out
+如果一切正常，在out文件中有输出："this is a small house"
+
+训练
+
+cd ~/workspace/Moses
+mkdir test
+cd test
+#将汉语(b.cn)和拼音(b.en)的语料放入test中
+在vi下查看编码:set fileencoding
+
+构建语言模型
+
+语料预处理：
+
+#在test文件夹下
+#tokenizer：在语料的单词和单词之间或者单词和标点之间插入空白
+tokenizer.perl -l en < b.en > b.tok.en -threads 8
+tokenizer.perl -l en < b.cn > b.tok.cn -threads 8
+#truecaser：提取一些关于文本的统计信息
+train-truecaser.perl --corpus b.tok.en --model b.model.en
+train-truecaser.perl --corpus b.tok.cn --model b.model.cn
+#truecasing：将语料中每句话的字和词组都转换为没有格式的形式，减少数据的稀疏性问题
+truecase.perl --model b.model.en < b.tok.en > b.true.en
+truecase.perl --model b.model.cn < b.tok.cn > b.true.cn
+#将长语句和空语句删除，并且将不对齐语句进行处理
+clean-corpus-n.perl b.true cn en b.clean 1 80 或
+clean-corpus-n.perl b cn en b.clean 1 80
+ngram-count -text b.clean.en -order 3 -write b.count.en 
+ngram-count -read b.count.en -order 3 -lm b.lm.en -interpolate -kndiscount
+
+语言模型训练：
+
+#对语料加首尾标识符
+add-start-end.sh < b.clean.cn > b.sb.cn
+add-start-end.sh < b.clean.en > b.sb.en
+#生成语言模型文件
+build-lm.sh -i b.sb.cn -t ./tmp -p -s improved-kneser-ney -o b.lm.cn
+build-lm.sh -i b.sb.en -t ./tmp -p -s improved-kneser-ney -o b.lm.en
+#将文件转换成标准的ARPA格式
+compile-lm --text b.lm.cn.gz b.arpa.cn
+compile-lm --text b.lm.en.gz b.arpa.en
+#使用KenLM对其进行二值化，为了让程序更快载入
+build_binary b.arpa.cn b.blm.cn
+build_binary b.arpa.en b.blm.en
+以上几步可以用下面的语句替换:
+/home/xuexin/workspace/Moses/mosesdecoder/scripts/generic/trainlm-irst2.perl -cores 4 -irst-dir /home/xuexin/workspace/Moses/irstlm-5.80.08/bin/ -p 0 -order 5 -text b.clean.en -l b.lm.en
+build_binary b.lm.en b.blm.en
+但是很不幸，我运行很多遍，都不能运行通，生成的ARPA格式一直都是slatin1格式。后来请教高人，决定换一种方法，采用KenLM方法得到ARPA格式文件，并进行二值化，下面是具体过程：
+
+详情参考：http://kheafield.com/code/kenlm/
+
+wget -O - http://kheafield.com/code/kenlm.tar.gz | tar xz
+cd kenlm
+./bjam -j4
+#生成ARPA格式文件 （对训练语料进行就行）
+bin/lmplz -o 5 < b.clean.cn > b.arpa.cn
+bin/lmplz -o 5 < b.clean.en > b.arpa.en
+bin/lmplz -o 5 < ../ErrorWords_final/b.clean.cn > ../ErrorWords_final/b.arpa.cn
+#进行二值化
+bin/build_binary ../ErrorWords_final/b.arpa.cn ../ErrorWords_final/b.lm.cn
+bin/build_binary ../ErrorWords_final/b.arpa.en ../ErrorWords_final/b.lm.en
+bin/build_binary ../ErrorWords_final_800000/b.arpa.en  ../ErrorWords_final_800000/b.lm.en
+不用irstlm，改成srilm
+
+构建翻译模型
+
+#在Moses文件夹下
+mkdir working
+cd working
+1. nohup nice train-model.perl -root-dir train -corpus ../b.clean -f cn -e en -alignment grow-diag-final-and -reordering msd-bidirectional-fe -lm 0:3:/home/xuexin/workspace/Moses/test/b.blm.en:8 -external-bin-dir ~/workspace/Moses/mosesdecoder/tools >& training.out & 
+2. nohup nice train-model.perl -root-dir train -corpus ../b.clean -f cn -e en -alignment grow-diag-final-and -reordering msd-bidirectional-fe -lm 0:3:/home/xuexin/workspace/Moses/ErrorWords_final_800000_3word/b.blm.en:8 -external-bin-dir ~/workspace/Moses/mosesdecoder/tools >& training.out &
+注意：-lm 参数后面的要用绝对地址！！！
+
+结束后，working文件夹下会出现train目录，在train/model/能找到配置文件moses.ini。
+
+测试训练模型是否正确
+
+#在working文件夹下
+echo "我是小明" | ~/workspace/Moses/mosesdecoder/bin/moses -f train/model/moses.ini > out
+cat out
+"I'm xiaoming"
+通过训练模型生成结果文件
+
+#在working文件夹
+moses -config train/model/moses.ini -input-file ../ErrorWords/b.cn > ../ErrorWords/result.output  或
+moses -config train/model/moses.ini -input-file ../../ErrorWords/errorsentences.t2s > result.output
+调优
+
+相信大家在实验环节就能注意到，只要输入了语料以外的语法，翻译就不准确了，因此我们需要使用有限的语料库，实现高质量的翻译。
+
+train-model.perl默认是Giza++完成词对齐处理（占整体训练时间的70%），但是它只支持单线程处理；因此需要MGiza工具，实现多线程处理。
+
+#优化脚本
+nohup nice train-model.perl -mgiza -mgiza-cpus 8 -cores 8 -parallel -sort-buffer-size 6G -sort-batch-size 400 -sort-compress gzip -sort-parallel 10 -root-dir train -corpus ../b.clean -f cn -e en -alignment grow-diag-final-and -reordering msd-bidirectional-fe -lm 0:3:/home/xuexin/workspace/Moses/test/b.lm.en:8 -external-bin-dir /mgiza ~/workspace/Moses/mosesdecoder/tools >& training.out &
+【注：MGiza没有安装上，还有待研究！！！】
+
+使用优化好的脚本，理论上性能可以提升80%，但还得看实际硬件，CPU是i5以下，将所有并发数降低到4。
+
+-mgiza-cpus 8 -cores 8，一个指的是对齐统计时的并发数，一个指的是文件输出时的并发数，它俩在执行时有先后顺序，并不冲突。
+
+另一种调优方法（不需要MGiza）：相当于开发集
+
+nohup nice mert-moses.pl --decoder-flags="-threads 12" /home/panda/corpus/Traditional/SecondSeg/working/a.true.homo /home/panda/corpus/Traditional/SecondSeg/working/a.true.gold /home/panda/moses/bin/moses /home/panda/corpus/Traditional/SecondSeg/working/train/model/moses.ini --mertdir /home/panda/moses/bin/ &> mert.out &
+注：
+
+该指标在虚拟机上不准确，虚拟机实际性能要看其实体机的共享资源而定。
+训练过程会将磁盘文件按堆拷贝到内存中，反复多次迭代，所以磁盘的性能也会产生很大影响，如果有条件，fusionlo或ssd将会带来很好的性能提升。
+参考文章：
+
+http://wenku.baidu.com/link?url=ds_CZNtj-QhTZNxfvIUpRGhtHuviBTL4mAGCLO6IULMLZ1Pas5rf99bcEX7-KWz4mjMnjo9fCgZijFtkNJPf0cB4-bdoHXvCWvNDDFaGx6i
+http://wenku.baidu.com/link?url=mw3GKkIFd4TCZt_O2e3vfvrUuGxhmu7SoBqt04nD6BwLgWRIVsJ5lS1hammjmjri3uSeN8c52eKB89tXJ1legiyZCybY51S3OfumCtMRu8q （本人觉得这篇不错~）
+http://www.cnblogs.com/panweishadow/p/4771050.html
+http://blog.csdn.net/lqj1990/article/details/47105691
+http://blog.csdn.net/lqj1990/article/details/47083067
+http://kheafield.com/code/kenlm/
