@@ -35,7 +35,7 @@ cleaning： 将长语句和空语句删除，并且将不对齐语句进行处�
 
 训练翻译系统：
 cd corpus
-nohup nice ~/Moses/mosesdecoder/scripts/training/train-model.perl -root-dir train -corpus ../news-commentary-v8.fr-en.clean -f fr -e en -alignment grow-diag-final-and -reordering msd-bidirectional-fe -lm 0:3:/home/tx/lm/news-co
+nohup nice ~/Moses/mosesdecoder/scripts/training/train-model.perl -root-dir train -corpus ../news-commentary-v8.fr-en.clean -f fr -e en -alignment grow-diag-final-and -reordering msd-bidirectional-fe -lm 0:3:$HOME/lm/news-commentary-v8.fr-en.blm.en:8-external-bin-dir ~／Moses/mosesdecoder/tools >& training.out &
 (******nohup 指后台不挂断地运行命令*******
 nohup命令：如果你正在运行一个进程，而且你觉得在退出帐户时该进程还不会结束，那么可以使用nohup命令。该命令可以在你退出帐户/关闭终端之后继续运行相应的进程。nohup就是不挂断的意思( no hang up)。
 使用 jobs 查看任务。
