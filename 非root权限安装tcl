@@ -1,0 +1,4 @@
+没有root权限时安装tcl：
+在./configure的时候自己指定安装路径，如:
+./configure –-prefix=/home/tx/tcll
+这样一来，接下来的make 和make install命令就不需要sudo，结果再tcll中
