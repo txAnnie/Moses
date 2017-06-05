@@ -165,7 +165,7 @@ cd mosesdecoder
 别忘了之前将tools文件夹放在mosesdecoder文件夹下
 
 更改环境变量
-
+/*
 #在根目录下
 vi .bashrc
 进入编辑模式，输入：
@@ -182,7 +182,7 @@ export KENLM*/
 PATH="\$MOSE/bin:\$MOSE_SCRIPTS/training:\$MOSE_SCRIPTS/tokenizer:\$MOSE_SCRIPTS/recaser:\$IRSTLM/bin:\$KENLM/bin:\$PATH" 
 export PATH 
 esc键退出插入状态，：wq退出并保存.bashrc文件。重启terminal，环境变量生效。可以利用echo $PATH查看环境变量是否成功，在PATH内的路径下的脚本文件都可以直接使用。
-
+*/
 至此，moses编译安装完成。
 
 测试运行moses
