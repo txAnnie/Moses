@@ -24,7 +24,7 @@ truecasing：将语料中每句话的字和词组都转换为没有格式的形�
 
 cleaning： 将长语句和空语句删除，并且将不对齐语句进行处理。
 /home/tx/Moses/mosesdecoder/scripts/training/clean-corpus-n.perl /home/tx/Moses/corpus/news-commentary-v8.fr-en.true fr en /home/tx/Moses/corpus/news-commentary-v8.fr-en.clean 1 80
-
+~、
 
 语言模型训练（法语到英语）:
 使用Kenlｍ生成一个合适的３元语言模型
